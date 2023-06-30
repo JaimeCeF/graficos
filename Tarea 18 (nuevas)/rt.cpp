@@ -373,7 +373,7 @@ Color shade(const Ray &r, int bounce, int cond) {
 int main(int argc, char *argv[]) {
 	int w = 1024, h = 768; // image resolution
 
-	int N = 512;  // numero de muestras
+	int N = 32;  // numero de muestras
 
 	// fija la posicion de la camara y la dirección en que mira
 	Ray camera( Point(0, 11.2, 214), Vector(0, -0.042612, -1).normalize() );
@@ -390,9 +390,9 @@ int main(int argc, char *argv[]) {
 
 	// PROYECTO 1
 	// usar openmp para paralelizar el ciclo: cada hilo computara un renglon (ciclo interior),
-	omp_set_num_threads(h);
+	// omp_set_num_threads(h);
 	#pragma omp parallel
-	#pragma omp for
+	#pragma omp for schedule(dynamic, 1)
 
 	for(int y = 0; y < h; y++) 
 	{ 
