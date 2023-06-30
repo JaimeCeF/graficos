@@ -97,7 +97,7 @@ Sphere spheres[] = {
 	//Escena: radio, posicion, color, emision
 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         0), // pared izq
 	Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),		  0), // pared der
-	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(1, 1, 1), Color(),		  0), // pared detras
+	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),		  0), // pared detras
 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),		  0), // suelo
 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),		  0), // techo
 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),		  1), // esfera abajo-izq
