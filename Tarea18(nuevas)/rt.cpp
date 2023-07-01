@@ -101,8 +101,8 @@ Sphere spheres[] = {
 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),		  0), // suelo
 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),		  0), // techo
 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),		  1), // esfera abajo-izq
-	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1), 	 	 Color(),		  2), // esfera abajo-der
-	// Sphere(10.5, Point(23, -24.3, -3.6),   Color(1, 0.5, 0.02), 	 	 Color(),		  0), // esfera abajo-der-atras
+	Sphere(16.5, Point(23, -24.3, -3.6),   Color(0.26, 0.53, 0.96), 	 	 Color(),		  0), // esfera abajo-der
+	Sphere(10.5, Point(-26, -30.3, 10),     Color(1, 1, 1), 	 	 Color(),		  2), // esfera abajo-der-atras
 	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), 0) // esfera de luz
 };
 
@@ -373,7 +373,7 @@ Color shade(const Ray &r, int bounce, int cond) {
 int main(int argc, char *argv[]) {
 	int w = 1024, h = 768; // image resolution
 
-	int N = 32;  // numero de muestras
+	int N = 512;  // numero de muestras
 
 	// fija la posicion de la camara y la dirección en que mira
 	Ray camera( Point(0, 11.2, 214), Vector(0, -0.042612, -1).normalize() );
