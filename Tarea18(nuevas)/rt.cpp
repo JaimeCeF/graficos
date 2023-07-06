@@ -263,7 +263,7 @@ Color shade(const Ray &r, int bounce, int cond) {
 	// material especular 
 
 	if (obj.mat == 1){
-		Vector wr = r.d - nv*2*(nv.dot(r.d));  // direccion de refleccion especular ideal
+		Vector wr = r.d - n*2*(n.dot(r.d));  // direccion de refleccion especular ideal
 		wr.normalize();
 		return baseColor.mult(shade(Ray(x, wr), bounce, 1));
 	}
@@ -303,6 +303,7 @@ Color shade(const Ray &r, int bounce, int cond) {
 				Color Le = temp.e;
 				double dotCos1 = n.dot(wl);
 				probLight = probSolidAngle(cosTmax);
+				double probLuzBDRF=0.5 * wl.z;
 				directLight = directLight + Le.mult(bsdf * fabs(dotCos1) * (1.0 / (probLight*continueprob)));
 			}
 		}
@@ -358,7 +359,7 @@ Color shade(const Ray &r, int bounce, int cond) {
 		double ft = (((nt*nt)/(ni*ni))*(1 - F)) / fabs(cosTt);
 
 		if (reflect) {
-			return obj.e + baseColor.mult(shade(reflectionRay, bounce, 1));
+			return obj.e + baseColor.mult(shade(reflectionRay, bounce, 1)) * (fr*fabs(nv.dot(wr))/pr);
 		}
 
 		return obj.e + baseColor.mult(shade(refractionRay, bounce, 1))*(ft*fabs(nv.dot(wt))/pt);
@@ -373,7 +374,7 @@ Color shade(const Ray &r, int bounce, int cond) {
 int main(int argc, char *argv[]) {
 	int w = 1024, h = 768; // image resolution
 
-	int N = 512;  // numero de muestras
+	int N = 32;  // numero de muestras
 
 	// fija la posicion de la camara y la dirección en que mira
 	Ray camera( Point(0, 11.2, 214), Vector(0, -0.042612, -1).normalize() );
