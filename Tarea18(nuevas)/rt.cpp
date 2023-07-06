@@ -303,7 +303,6 @@ Color shade(const Ray &r, int bounce, int cond) {
 				Color Le = temp.e;
 				double dotCos1 = n.dot(wl);
 				probLight = probSolidAngle(cosTmax);
-				double probLuzBDRF=0.5 * wl.z;
 				directLight = directLight + Le.mult(bsdf * fabs(dotCos1) * (1.0 / (probLight*continueprob)));
 			}
 		}
