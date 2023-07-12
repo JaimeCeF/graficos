@@ -101,6 +101,8 @@ Sphere spheres[] = {
 	Sphere(10.5, Point(0, 24.3, 0),        Color(1, 1, 1),       Color(10,10,10)) // esfera de luz
 };
 
+double totalShperes = sizeof(spheres)/sizeof(Sphere);
+
 // limita el valor de x a [0,1]
 inline double clamp(const double x) { 
 	if(x < 0.0)
@@ -176,13 +178,17 @@ Vector makeVec(double &theta, double &phi, string type){
 	return vec;
 }
 
+double PowerHeuristic(double fPdf, double gPdf) {
+    double f2 = fPdf * fPdf, g2 = gPdf * gPdf;
+    return f2 / (f2 + g2);
+}
+
 // funcion para obtener los parametros del muestreo uniforme en hemisferio
-void paramCosineHemisphere(double &theta, double &phi, double &prob) {
+void paramCosineHemisphere(double &theta, double &phi) {
     double rand1 = dis(gen);
     double rand2 = dis(gen);
     theta = acos(sqrt(1.0 - rand1));
     phi = 2.0 * M_PI * rand2;
-    prob = invPi * cos(theta);
 }
 
 // funcion para obtener los parametros del muestreo en area
@@ -195,16 +201,36 @@ void paramArea(double &theta, double &phi) {
 }
 
 // funcion para obtener los parametros del muestreo del angulo solido
-void paramSolidAngle(Point &p, double &theta, double &phi, double &cosTmax) {
-	double r = spheres[7].r;
+void paramSolidAngle(Point &p, double &theta, double &phi, double &cosTmax, const Sphere &light) {
+	double r = light.r;
     double rand1 = dis(gen);
     double rand2 = dis(gen);
-	Vector wc = (spheres[7].p - p);
+	Vector wc = (light.p - p);
 	double lengthWc = sqrt((wc.x * wc.x) + (wc.y * wc.y) + (wc.z * wc.z));
-	double aux = r / lengthWc;
-	cosTmax = sqrt(1.0 - (aux * aux));
+	double sinTmax = r / lengthWc;
+	cosTmax = sqrt(1.0 - (sinTmax * sinTmax));
     theta = acos(1.0 - rand1 + (rand1 * (cosTmax)));
     phi = 2.0 * M_PI * rand2;
+}
+
+double getCosTmax(Ray &brdfRay, Point &x) {
+	double t;
+	int id;
+	intersect(brdfRay, t, id);
+	const Sphere &obj = spheres[id];
+
+	double r = obj.r;
+    double rand1 = dis(gen);
+    double rand2 = dis(gen);
+	Vector wc = (obj.p - x);
+	double lengthWc = sqrt((wc.x * wc.x) + (wc.y * wc.y) + (wc.z * wc.z));
+	double aux = r / lengthWc;
+	return sqrt(1.0 - (aux * aux));
+}
+
+double probCosineHemisphere(Vector &wi){
+	double theta = acos(wi.z);
+	return cos(theta) * invPi;
 }
 
 // funcion para calcular probabilidad de muestreo en area
@@ -223,6 +249,20 @@ double probArea(Point &x, Point &x1) {
 // funcion para calcular probabilidad de muestreo del angulo solido
 double probSolidAngle(const double &cosTmax) {
 	return 1.0 / (2 * M_PI * (1 - cosTmax));
+}
+
+bool checkHitLight(Ray &brdfRay) {
+	double t;
+	int id;
+
+	if (intersect(brdfRay, t, id)) {
+		const Sphere &obj = spheres[id];
+		if (obj.e.x > 0.0 && obj.e.y > 0.0 && obj.e.z > 0.0) {
+			return true;
+		}
+		else return false;
+	}
+	else return false;
 }
 
 // funcion para determinar la emision del punto x' con muestreo de area
@@ -254,7 +294,7 @@ Color radianceSolidAngle(Point &x, Vector &wi) {
 	if (intersect(newRay, t1, id1)) {
 		const Sphere &obj = spheres[id1];
 		if (obj.e.x > 0.0 && obj.e.y > 0.0 && obj.e.z > 0.0) {
-			Le = spheres[7].e;
+			Le = obj.e;
 		}
 		else Le = Color();
 	}
@@ -270,43 +310,62 @@ Color BRDF(const Sphere &obj) {
 
 // funcion de estimador Monte Carlo para muestreo coseno hemisferico
 Vector monteCosHem(Vector &n, Point &x, const Sphere &obj){
-	Color L, sum;
+	Color L;
 	Vector s, t;
-	double theta, phi, prob;
+	double theta, phi, fPdf, gPdf;
 	coordinateSystem(n, s, t);
-	paramCosineHemisphere(theta, phi, prob);
+	paramCosineHemisphere(theta, phi);
+
 	Vector wi = makeVec(theta, phi, "direction").normalize();
 	Vector wiglob = globalizeCoord(wi, n, s, t);
+	Ray bounceRay = Ray (x, wiglob);
+	fPdf = probCosineHemisphere(wiglob);
 	Color Le = radianceSolidAngle(x, wiglob);
 	Color fr = BRDF(obj);
 	double dotCos = n.dot(wiglob);
-	L = Le.mult(fr) * (dotCos/prob);
-	sum = sum + L;
+	if (checkHitLight(bounceRay)){
+		double cosTmax = getCosTmax(bounceRay, x);
+		gPdf = probSolidAngle(cosTmax);
+		double wf = PowerHeuristic(fPdf, gPdf);
+		L = L + (Le.mult(fr) * (dotCos/fPdf))*wf;
+	}
+	else L = Color();
 
-	return sum;
+	return L;
 }
 
 // funcion de estimador Monte Carlo para muestreo del angulo solido
-Vector monteCarloSolidAngle(int &N, Vector &n, Point &x, const Sphere &obj){
-	Color L, sum;
-	Vector s, t;
-	double theta, phi, cosTmax, prob;
-	Vector wc = (spheres[7].p - x).normalize();
-	coordinateSystem(wc, s, t);
+Vector monteCarloSolidAngle(Vector &n, Point &x, const Sphere &obj){
+	Color L;
 
-	for(int i = 0; i < N; i++){
-		paramSolidAngle(x, theta, phi, cosTmax);
+	for (int i = 0; i < totalShperes; i++){
+		const Sphere &temp = spheres[i];
+		if (temp.e.x <= 0 && temp.e.y <= 0 && temp.e.z <= 0)	// si la esfera i no tiene emision, saltarla
+			continue;
+		Vector wc = (temp.p - x).normalize();
+		Vector s, t;
+		coordinateSystem(wc, s, t);
+		double theta, phi, cosTmax, fPdf, gPdf;
+		paramSolidAngle(x, theta, phi, cosTmax, temp);
+
 		Vector wi = makeVec(theta, phi, "direction").normalize();
 		Vector wiglob = globalizeCoord(wi, wc, s, t);
 		Color Le = radianceSolidAngle(x, wiglob);
 		Color fr = BRDF(obj);
 		double dotCos = n.dot(wiglob);
-		prob = probSolidAngle(cosTmax);
-		L = Le.mult(fr) * (dotCos/prob);
-		sum = sum + L;
+		fPdf = probSolidAngle(cosTmax);
+		gPdf = probCosineHemisphere(wiglob);
+		double wg = PowerHeuristic(fPdf, gPdf);
+		L = L + (Le.mult(fr) * (dotCos/fPdf))*wg;
 	}
 
-	return sum;
+	return L;
+}
+
+bool isLight(const Sphere &sphere){
+	if (sphere.e.x <= 0 && sphere.e.y <= 0 && sphere.e.z <= 0)
+		return false;
+	else return true;
 }
 
 // Calcula el valor de color para el rayo dado
@@ -314,6 +373,8 @@ Color shade(const Ray &r) {
 	double t;
 	int id = 0;
 	Color colorValue;
+	Color brdfSample;
+	Color lightSample;
 
 	// determinar que esfera (id) y a que distancia (t) el rayo intersecta
 	if (!intersect(r, t, id))
@@ -329,10 +390,14 @@ Color shade(const Ray &r) {
 
 	// determinar el color que se regresara
 
-	if (id == 7){
+	if (isLight(obj)){
 		colorValue = Color();
 	}
-	else colorValue = monteCosHem(n, x, obj);
+	else {
+		brdfSample = monteCosHem(n, x, obj);
+		lightSample = monteCarloSolidAngle(n, x, obj);
+	}
+	colorValue = brdfSample + lightSample;
 
 	return obj.e + colorValue;
 }
@@ -340,7 +405,7 @@ Color shade(const Ray &r) {
 int main(int argc, char *argv[]) {
 	int w = 1024, h = 768; // image resolution
 
-	int N = 512;  // numero de muestras
+	int N = 32;  // numero de muestras
 
 	// fija la posicion de la camara y la dirección en que mira
 	Ray camera( Point(0, 11.2, 214), Vector(0, -0.042612, -1).normalize() );
@@ -357,9 +422,9 @@ int main(int argc, char *argv[]) {
 
 	// PROYECTO 1
 	// usar openmp para paralelizar el ciclo: cada hilo computara un renglon (ciclo interior),
-	omp_set_num_threads(h);
+	// omp_set_num_threads(h);
 	#pragma omp parallel
-	#pragma omp for
+	#pragma omp for schedule(dynamic, 1)
 
 	for(int y = 0; y < h; y++) 
 	{ 
