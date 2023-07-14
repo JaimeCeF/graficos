@@ -310,7 +310,6 @@ Color BRDF(const Sphere &obj) {
 
 // funcion de estimador Monte Carlo para muestreo coseno hemisferico
 Vector monteCosHem(Vector &n, Point &x, const Sphere &obj){
-	Color L;
 	Vector s, t;
 	double theta, phi, fPdf, gPdf;
 	coordinateSystem(n, s, t);
@@ -319,19 +318,20 @@ Vector monteCosHem(Vector &n, Point &x, const Sphere &obj){
 	Vector wi = makeVec(theta, phi, "direction").normalize();
 	Vector wiglob = globalizeCoord(wi, n, s, t);
 	Ray bounceRay = Ray (x, wiglob);
-	fPdf = probCosineHemisphere(wiglob);
+	fPdf = probCosineHemisphere(wi);
 	Color Le = radianceSolidAngle(x, wiglob);
 	Color fr = BRDF(obj);
 	double dotCos = n.dot(wiglob);
 	if (checkHitLight(bounceRay)){
 		double cosTmax = getCosTmax(bounceRay, x);
-		gPdf = probSolidAngle(cosTmax);
+		gPdf = (probSolidAngle(cosTmax));
 		double wf = PowerHeuristic(fPdf, gPdf);
-		L = L + (Le.mult(fr) * (dotCos/fPdf))*wf;
+		// printf("BRDF fPdf is %f \n", fPdf);
+		// printf("BRDF gPdf is %f \n", gPdf);
+		// printf("BRDF wf is %f \n", wf);
+		return (Le.mult(fr) * (dotCos/fPdf))*wf;
 	}
-	else L = Color();
-
-	return L;
+	else return Color();
 }
 
 // funcion de estimador Monte Carlo para muestreo del angulo solido
@@ -340,13 +340,13 @@ Vector monteCarloSolidAngle(Vector &n, Point &x, const Sphere &obj){
 
 	for (int i = 0; i < totalShperes; i++){
 		const Sphere &temp = spheres[i];
-		if (temp.e.x <= 0 && temp.e.y <= 0 && temp.e.z <= 0)	// si la esfera i no tiene emision, saltarla
+		if (temp.e.x <= 0 && temp.e.y <= 0 && temp.e.z <= 0)
 			continue;
+		double theta, phi, cosTmax, fPdf, gPdf;
+		paramSolidAngle(x, theta, phi, cosTmax, temp);
 		Vector wc = (temp.p - x).normalize();
 		Vector s, t;
 		coordinateSystem(wc, s, t);
-		double theta, phi, cosTmax, fPdf, gPdf;
-		paramSolidAngle(x, theta, phi, cosTmax, temp);
 
 		Vector wi = makeVec(theta, phi, "direction").normalize();
 		Vector wiglob = globalizeCoord(wi, wc, s, t);
@@ -354,8 +354,11 @@ Vector monteCarloSolidAngle(Vector &n, Point &x, const Sphere &obj){
 		Color fr = BRDF(obj);
 		double dotCos = n.dot(wiglob);
 		fPdf = probSolidAngle(cosTmax);
-		gPdf = probCosineHemisphere(wiglob);
+		gPdf = (probCosineHemisphere(wi));
 		double wg = PowerHeuristic(fPdf, gPdf);
+		// printf("Light fPdf is %f \n", fPdf);
+		// printf("Light gPdf is %f \n", gPdf);
+		// printf("Light wg is %f \n", wg);
 		L = L + (Le.mult(fr) * (dotCos/fPdf))*wg;
 	}
 
@@ -391,12 +394,10 @@ Color shade(const Ray &r) {
 	// determinar el color que se regresara
 
 	if (isLight(obj)){
-		colorValue = Color();
+		return obj.e;
 	}
-	else {
-		brdfSample = monteCosHem(n, x, obj);
-		lightSample = monteCarloSolidAngle(n, x, obj);
-	}
+	brdfSample = monteCosHem(n, x, obj);
+	lightSample = monteCarloSolidAngle(n, x, obj);
 	colorValue = brdfSample + lightSample;
 
 	return obj.e + colorValue;
