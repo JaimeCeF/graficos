@@ -259,14 +259,6 @@ Color shade(const Ray &r, int bounce, int cond) {
 	if (dis(gen) < q) return Color();
 
 	// determinar el color que se regresara
-
-	// material especular 
-
-	if (obj.mat == 1){
-		Vector wr = r.d - n*2*(n.dot(r.d));  // direccion de refleccion especular ideal
-		wr.normalize();
-		return baseColor.mult(shade(Ray(x, wr), bounce, 1));
-	}
 	
 	// material difuso
 
@@ -307,6 +299,14 @@ Color shade(const Ray &r, int bounce, int cond) {
 			}
 		}
 		return obj.e * cond + directLight + indirectLight;
+	}
+	
+	// material especular 
+
+	if (obj.mat == 1){
+		Vector wr = r.d - n*2*(n.dot(r.d));  // direccion de refleccion especular ideal
+		wr.normalize();
+		return baseColor.mult(shade(Ray(x, wr), bounce, 1));
 	}
 
 	// material dielectrico
