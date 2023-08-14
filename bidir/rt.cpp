@@ -20,6 +20,18 @@
 
 using namespace std;
 
+// Sphere spheres[] = {
+// 	//Escena: radio, posicion, color, emision, material
+// 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         diffuse), // pared izq
+// 	Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),	      diffuse), // pared der
+// 	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      diffuse), // pared detras
+// 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      diffuse), // suelo
+// 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      diffuse), // techo
+// 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      specular), // esfera espejo
+// 	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1), 	     Color(),	      dielectric), // esfera dielectrica
+// 	Sphere(1.5, Point(-40, -39.3, -60),        Color(0, 0, 0),       Color(600,600,600), diffuse)  // esfera de luz
+// };
+
 Sphere spheres[] = {
 	//Escena: radio, posicion, color, emision, material
 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         diffuse), // pared izq
@@ -28,32 +40,9 @@ Sphere spheres[] = {
 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      diffuse), // suelo
 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      diffuse), // techo
 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      specular), // esfera espejo
-	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1), 	     Color(),	      dielectric), // esfera dielectrica
-	Sphere(1.5, Point(-40, -39.3, -60),        Color(0, 0, 0),       Color(600,600,600), diffuse)  // esfera de luz
+	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1),       Color(), 		  dielectric), // esfera dielectrica
+	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), diffuse)  // esfera de luz
 };
-
-// Sphere spheres[] = {
-// 	//Escena: radio, posicion, color, emision, material
-// 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         diffuse), // pared izq
-// 	Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),	      diffuse), // pared der
-// 	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      diffuse), // pared detras
-// 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      diffuse), // suelo
-// 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      diffuse), // techo
-// 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      specular), // esfera espejo
-// 	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1),       Color(), 		  dielectric), // esfera dielectrica
-// 	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), diffuse)  // esfera de luz
-// };
-// Sphere spheres[] = {
-// 	//Escena: radio, posicion, color, emision, material
-// 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         diffuse), // pared izq
-// 	Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),	      diffuse), // pared der
-// 	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      diffuse), // pared detras
-// 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      diffuse), // suelo
-// 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      diffuse), // techo
-// 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      specular), // esfera espejo
-// 	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1), 	     Color(),	      specular), // esfera dielectrica
-// 	Sphere(1.5, Point(-40, -39.3, -60),        Color(0, 0, 0),       Color(600,600,600), diffuse)  // esfera de luz
-// };
 
 double totalShperes = sizeof(spheres)/sizeof(Sphere);
 
@@ -214,7 +203,7 @@ bool checkOcclusion(const Point &lightPoint, const Vector &objDirection, int id)
  * id: id of the hit object
  * returns Color influence to Ray
  * */
-Color shadowRay(const std::vector<LightPath> &lightPath, const Sphere &obj, const Point &x, Vector &n, int id) {
+Color Gterm(const std::vector<LightPath> &lightPath, const Sphere &obj, const Point &x, Vector &n, int id) {
 	Vector G;
 
 	if(obj.mat == diffuse) {
@@ -433,9 +422,6 @@ Color shade(
   
 	const Sphere &obj = spheres[id];  //esfera sobre la que se intersecto
 
-	// if (obj.e.x > 0 && obj.e.y > 0 && obj.e.z > 0 && cond == 1)		// si la esfera intersectada es una fuente de luz y es el primer camino del rayo, regresar luz
-	// 	return obj.e;
-
 	if (++bounce > 10) return Color();
 
 	// determinar coordenadas del punto de interseccion
@@ -475,17 +461,16 @@ Color shade(
 		double probMat = probCosineHemisphere(newDir, nv);
 		Ray newRay = Ray(x, newDir);
 
-			bool notLight = lights.find(id) == lights.end();
+		bool notLight = lights.find(id) == lights.end();
 
 		if(!notLight && isFirstBounce){
 			gatheredColor = gatheredColor + gatheredRefl.mult(obj.e);
 		}
-		else if(notLight || checkLightPath){
-			gatheredColor = gatheredColor + gatheredRefl.mult(directLightValue(x, n, bsdf, continueprob));
-		}
+		// else if(notLight || checkLightPath){
+		// 	gatheredColor = gatheredColor + gatheredRefl.mult(directLightValue(x, n, bsdf, continueprob));
+		// }
 
-		Vector G = shadowRay(lightPath, obj, x, n, id);
-		// std::cout << "Geometric x value: " << G.x << std::endl;
+		Vector G = Gterm(lightPath, obj, x, n, id);
 		gatheredColor = gatheredColor + gatheredRefl.mult(G);
 
 		// calculo de iluminacion indirecta
@@ -520,9 +505,8 @@ Color shade(
 	// material especular 
 
 	if (obj.mat == 1){
-		Vector wr = r.d - n*2*(n.dot(r.d));  // direccion de refleccion especular ideal
-		wr.normalize();
-		return baseColor.mult(shade(Ray(x, wr), lightPath, bounce + 1, 1, gatheredColor, true, gatheredRefl.mult(baseColor)));
+		Vector newDir = DirectionBSDF::SpecularBSDF(r, nv);
+		return baseColor.mult(shade(Ray(x, newDir), lightPath, bounce + 1, 1, gatheredColor, false, gatheredRefl.mult(baseColor)));
 	}
 
 	// material dielectrico
@@ -574,10 +558,10 @@ Color shade(
 		double ft = (((nt*nt)/(ni*ni))*(1 - F)) / fabs(cosTt);
 
 		if (reflect) {
-			return obj.e + baseColor.mult(shade(reflectionRay, lightPath, bounce + 1, 1, gatheredColor, true, gatheredRefl.mult(baseColor))) * (fr*fabs(nv.dot(wr))/pr);
+			return obj.e + baseColor.mult(shade(reflectionRay, lightPath, bounce + 1, 1, gatheredColor, false, gatheredRefl.mult(baseColor))) * (fr*fabs(nv.dot(wr))/pr);
 		}
 
-		return obj.e + baseColor.mult(shade(refractionRay, lightPath, bounce + 1, 1, gatheredColor, true, gatheredRefl.mult(baseColor)))*(ft*fabs(nv.dot(wt))/pt);
+		return obj.e + baseColor.mult(shade(refractionRay, lightPath, bounce + 1, 1, gatheredColor, false, gatheredRefl.mult(baseColor)))*(ft*fabs(nv.dot(wt))/pt);
 
 		// return baseColor.mult(shade(refractionRay, bounce, 1)*(ft/pt) + shade(Ray(x, wr), bounce, 1)*(fr/pr));
 	}
@@ -593,7 +577,7 @@ int main(int argc, char *argv[]) {
 	
 	int w = 1024, h = 768; // image resolution
 
-	int N = 64;  // numero de muestras
+	int N = 32;  // numero de muestras
 
 	// fija la posicion de la camara y la dirección en que mira
 	Ray camera( Point(0, 11.2, 214), Vector(0, -0.042612, -1).normalize() );

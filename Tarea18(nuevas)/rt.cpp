@@ -106,6 +106,30 @@ public:
 // 	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), 0) // esfera de luz
 // };
 
+// Sphere spheres[] = {
+// 	//Escena: radio, posicion, color, emision, material
+// 	// Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         diffuse), // pared izq
+// 	// Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),	      diffuse), // pared der
+// 	// Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      diffuse), // pared detras
+// 	// Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      diffuse), // suelo
+// 	// Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      diffuse), // techo
+// 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(.75, .75, .25),	     Color(),	      0), // esfera espejo
+// 	// Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1),       Color(), 		  dielectric), // esfera dielectrica
+// 	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), 0)  // esfera de luz
+// };
+
+// Sphere spheres[] = {
+// 	//Escena: radio, posicion, color, emision, material
+// 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         0), // pared izq
+// 	Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),	      0), // pared der
+// 	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      0), // pared detras
+// 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      0), // suelo
+// 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      0), // techo
+// 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      1), // esfera espejo
+// 	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1), 	     Color(),	      2), // esfera dielectrica
+// 	Sphere(1.5, Point(-40, -39.3, -60),        Color(0, 0, 0),       Color(600,600,600), 0)  // esfera de luz
+// };
+
 Sphere spheres[] = {
 	//Escena: radio, posicion, color, emision, material
 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         0), // pared izq
@@ -114,7 +138,7 @@ Sphere spheres[] = {
 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      0), // suelo
 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      0), // techo
 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      1), // esfera espejo
-	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1), 	     Color(),	      2), // esfera difusa
+	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1),       Color(), 		  2), // esfera dielectrica
 	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), 0)  // esfera de luz
 };
 
@@ -192,12 +216,11 @@ Vector makeVec(double &theta, double &phi){
 }
 
 // funcion para obtener los parametros del muestreo uniforme en hemisferio
-void paramCosineHemisphere(double &theta, double &phi, double &prob) {
+void paramCosineHemisphere(double &theta, double &phi) {
     double rand1 = dis(gen);
     double rand2 = dis(gen);
     theta = acos(sqrt(1.0 - rand1));
     phi = 2.0 * M_PI * rand2;
-    prob = invPi * cos(theta);
 }
 
 // funcion para obtener los parametros del muestreo del angulo solido
@@ -211,6 +234,11 @@ void paramSolidAngle(Point &p, double &theta, double &phi, double &cosTmax, cons
 	cosTmax = sqrt(1.0 - (sinTmax * sinTmax));
     theta = acos(1.0 - rand1 + (rand1 * (cosTmax)));
     phi = 2.0 * M_PI * rand2;
+}
+
+// funcion para calcular probabilidad de muestreo de coseno hemisferico (material pdf)
+double probCosineHemisphere(Vector &wi, Vector &n){
+	return (wi.dot(n)) * invPi;
 }
 
 // funcion para calcular probabilidad de muestreo del angulo solido
@@ -259,7 +287,7 @@ Color shade(const Ray &r, int bounce, int cond) {
 	// determinar si un rayo choca con un objeto por dentro
 	// si es el caso,  voltear  la normal (nv)
 	Vector nv;
-	if (n.dot(r.d * -1) > 0) {nv = n;}
+	if (n.dot(r.d * -1) >= 0) {nv = n;}
 	else {nv = n * -1;}
 
 	// color del objeto intersectado
@@ -278,9 +306,10 @@ Color shade(const Ray &r, int bounce, int cond) {
 
 		// obtener una direccion aleatoria con muestreo de coseno hemisferico, wi
 		double theta, phi, probMat;
-		paramCosineHemisphere(theta, phi, probMat);
-		Vector wi = sampleDir(n, theta, phi).normalize();
-		double dotCos = n.dot(wi);
+		paramCosineHemisphere(theta, phi);
+		Vector wi = sampleDir(nv, theta, phi).normalize();
+		double dotCos = nv.dot(wi);
+		probMat = probCosineHemisphere(wi, nv);
 		Color bsdf = BRDF(baseColor);
 		Ray newRay = Ray(x, wi);
 
@@ -305,7 +334,7 @@ Color shade(const Ray &r, int bounce, int cond) {
 			Vector wl = sampleDir(wc, theta1, phi1).normalize();
 			if (intersect(Ray(x, wl), t, id) && id == i){	// si no hay oclusion, calcular iluminacion directa
 				Color Le = temp.e;
-				double dotCos1 = n.dot(wl);
+				double dotCos1 = nv.dot(wl);
 				probLight = probSolidAngle(cosTmax);
 				directLight = directLight + Le.mult(bsdf * fabs(dotCos1) * (1.0 / (probLight*continueprob)));
 			}
@@ -385,7 +414,7 @@ Color shade(const Ray &r, int bounce, int cond) {
 int main(int argc, char *argv[]) {
 	int w = 1024, h = 768; // image resolution
 
-	int N = 512;  // numero de muestras
+	int N = 32;  // numero de muestras
 
 	// fija la posicion de la camara y la dirección en que mira
 	Ray camera( Point(0, 11.2, 214), Vector(0, -0.042612, -1).normalize() );
