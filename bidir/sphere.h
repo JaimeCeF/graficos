@@ -11,18 +11,18 @@ enum Surface {
 class Sphere 
 {
 public:
-	double r;	// radio de la esfera
-	Point p;	// posicion
-	Color c;	// color  
-	Color e;	// emision
-	Surface mat;	// surface type, 0 = diffuse, 1 = specular, 2 = dielectric
+	double r;	// Sphere radius
+	Point p;	// Position
+	Color c;	// Color  
+	Color e;	// Emission
+	Surface mat;	// Surface type
 
 	Sphere(double r_, Point p_, Color c_, Color e_, Surface mat_): r(r_), p(p_), c(c_), e(e_), mat(mat_){}
   
-	// determina si el rayo intersecta a esta esfera
+	// Determine if ray hits sphere
 	double intersect(const Ray &ray) const {
-		// regresar distancia si hay intersección
-		// regresar 0.0 si no hay interseccion
+		// Return distance if there's interesection
+		// Return 0.0 otherwise
 		Vector op = ray.o - p;
 		Vector d = ray.d;
 		double t;

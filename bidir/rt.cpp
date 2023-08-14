@@ -7,8 +7,6 @@
 #include <omp.h>
 #include <vector>
 #include <random>
-#include <algorithm> // std::min_element
-#include <iterator>  // std::begin, std::end
 #include <iostream>
 #include <unistd.h>
 #include <map>
@@ -33,7 +31,7 @@ using namespace std;
 // };
 
 Sphere spheres[] = {
-	//Escena: radio, posicion, color, emision, material
+	// Scene: radius, position, color, emission, material
 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         diffuse), // pared izq
 	Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),	      diffuse), // pared der
 	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      diffuse), // pared detras
@@ -113,6 +111,8 @@ std::vector<LightPath> makeLightPath(const int bounces) {
 		Vector reflectance(1,1,1);
 		
 		for(int i = 0; i < bounces; i++) {
+
+			// Determine which sphere (id) and at what distance (t) the ray (r) intersects
 			if(!intersect(r, t, id)) {
 				continue;
 			}
@@ -196,41 +196,35 @@ bool checkOcclusion(const Point &lightPoint, const Vector &objDirection, int id)
 	return false;
 }
 
-/* Shoot shadow ray from object intersection from camera path (if object material is diffuse) to each intersection of the light path
- * lightPath: The path which was calculated by the makeLightPath() function
- * obj: the object that was hit by a camera ray
- * x: intersection point where the object was hit
- * id: id of the hit object
- * returns Color influence to Ray
- * */
+// Shoot shadow ray from camera object intersection (if object material is diffuse) to each intersection of the light path and return geometric term
 Color Gterm(const std::vector<LightPath> &lightPath, const Sphere &obj, const Point &x, Vector &n, int id) {
 	Vector G;
 
 	if(obj.mat == diffuse) {
 		for(int i = 0; i < lightPath.size(); i++) {
-			//create directional vector between camera hitpoint and light path hitpoint
+			// Direction vector between camera hit point (x) and light path hit point (lightPath[i].x)
 			Vector dir = lightPath[i].x - x ;
 			Vector dirNorm = dir.normalize();
-			//is there a shadowray?
-			// std::cout << "Conection?: " << checkOcclusion(lightPath[i].x, dir_norm*-1., id) << std::endl;
+
+			// Check for occlusion
 			if(checkOcclusion(lightPath[i].x, dirNorm*-1., id)) {
-				// normal of light path hit point
+				// Normal of light path hit point
 				Vector lightPathNorm = (lightPath[i].x - spheres[lightPath[i].obj].p).normalize();
 
-				//the diffuse PDF for the enlightend object
-				double diff_enlight_pdf = fabs((dirNorm * -1.).dot(lightPathNorm)) * invPi;
-				//the diffuse PDF for the camera object
-				double diff_eye_pdf = fabs(dirNorm.dot(n)) * invPi;
+				// Dot product between normal at camera object hit point and direction to light path hit point
+				double cameraObjDot = fabs(dirNorm.dot(n));
 
-				double distance_sqr = x.squaredDistance(lightPath[i].x);
-				// std::cout << "Sqr dist: " << distance_sqr << std::endl;
-				//First light constant which has to be added
-				G = G + lightPath[i].color * diff_enlight_pdf * (diff_eye_pdf / distance_sqr);
-				//e = e + (light_paths[i].absorbed_color * (dir.Dot(object.GetNormal(hit_point) * diffPdf))) / M_PI;
+				// Dot product between normal at light path hit point and direction to camera object hit point
+				double lightObjDot = fabs((dirNorm * -1.).dot(lightPathNorm));
+
+				// Squared distance between x and lightPath[i].x
+				double sqrdDist = x.squaredDistance(lightPath[i].x);
+
+				G = G + lightPath[i].color * ((lightObjDot * cameraObjDot) / sqrdDist);
 
 			}
 			else {
-				//Ignore if they don't see eachother
+				//Ignore if there's occlusion
 				continue;	
 			}
 
@@ -239,8 +233,10 @@ Color Gterm(const std::vector<LightPath> &lightPath, const Sphere &obj, const Po
 	
 	return G;
 }
-  
-Color directLightValue(Vector &x, Vector &n, Color &bsdf,double &continueprob){
+
+
+// Compute contribution from direct light sample
+Color directLightValue(Vector &x, Vector &n, Color &bsdf, double &continueprob){
 	Color directLight;
 	std::map<int,Sphere>::const_iterator it;
 	for(it = lights.begin(); it != lights.end(); it++) {
@@ -254,7 +250,7 @@ Color directLightValue(Vector &x, Vector &n, Color &bsdf,double &continueprob){
 		Vector wl = sampleDir(wc, theta1, phi1).normalize();
 		double t;
 		int id = 0;
-		if (intersect(Ray(x, wl), t, id) && id == it->first){	// si no hay oclusion, calcular iluminacion directa
+		if (intersect(Ray(x, wl), t, id) && id == it->first){
 			Color Le = temp.e;
 			double dotCos1 = n.dot(wl);
 			probLight = probSolidAngle(cosTmax);
@@ -266,306 +262,114 @@ Color directLightValue(Vector &x, Vector &n, Color &bsdf,double &continueprob){
 
 
 
-// Calcula el valor de color para el rayo dado
-// Color shade(const Ray &ray, const std::vector<LightPath> &lightPath) {
-// 	double t;
-// 	int id = 0;
-// 	int bounce = 0;
-// 	int maxBounce = 5;
-// 	bool checkLightPath = true;
-// 	Ray r = ray;
-// 	Vector gatheredColor(0,0,0);
-// 	Vector gatheredRefl(1,1,1);
-
-// 	for(int i = 0;; i++) {
-
-// 		// determinar que esfera (id) y a que distancia (t) el rayo intersecta
-// 		if (!intersect(r, t, id))
-// 			return Color();	// el rayo no intersecto objeto, return Vector() == negro
-	
-// 		const Sphere &obj = spheres[id];  //esfera sobre la que se intersecto
-
-// 		// std::cout << "Sphere index:" << id << std::endl;
-
-// 		if (++bounce > maxBounce) return gatheredColor;
-
-// 		// std::cout << "Bounces " << bounce << std::endl;
-
-// 		// determinar coordenadas del punto de interseccion
-// 		Point x = r.o + r.d*t;
-
-// 		// determinar la dirección normal en el punto de interseccion
-// 		Vector n = (x - obj.p).normalize();
-
-// 		// determinar si un rayo choca con un objeto por dentro
-// 		// si es el caso,  voltear  la normal (nv)
-// 		Vector nv;
-// 		if (n.dot(r.d * -1) > 0) {nv = n;}
-// 		else {nv = n * -1;}
-
-// 		// color del objeto intersectado
-// 		Color baseColor = obj.c;
-		
-// 		if(checkLightPath || obj.mat != diffuse)
-// 			gatheredColor = gatheredColor + gatheredRefl.mult(obj.e);
-
-// 		// ruleta rusa
-// 		double q = 0.1;
-// 		double continueprob = 1.0 - q;
-// 		if (dis(gen) < q) return gatheredColor;
-
-// 		gatheredRefl = gatheredRefl.mult(baseColor);
-
-// 		// determinar el color que se regresara
-		
-// 		Vector newDir;
-
-// 		// material difuso
-
-// 		if (obj.mat == diffuse) {
-// 			Vector newDir = DirectionBSDF::DiffuseBSDF(n);
-// 			Color bsdf = BRDF(baseColor);
-// 			bool notLight = lights.find(id) == lights.end();
-
-// 			if(!notLight && i == 0){
-// 				gatheredColor = gatheredColor + gatheredRefl.mult(obj.e);
-// 			}
-// 			else if(notLight || checkLightPath){
-// 				gatheredColor = gatheredColor + gatheredRefl.mult(directLightValue(x, n, bsdf, continueprob));
-// 			}
-// 			checkLightPath = false;
-// 			Vector G = shadowRay(lightPath, obj, x, n, id);
-// 			// std::cout << "Geometric x value: " << G.x << std::endl;
-// 			gatheredColor = gatheredColor + gatheredRefl.mult(G);
-
-// 			// double probMat = probCosineHemisphere(wi, n);
-// 			// double dotCos = n.dot(wi);
-// 			// Ray newRay = Ray(x, wi);
-
-// 			// Color indirectLight = bsdf.mult(shade(newRay, bounce, 0)) * (fabs(dotCos)/(probMat*continueprob));
-// 			// Color directLight = directLightValue(x, n, bsdf, continueprob);
-// 			// return obj.e * cond + directLight + indirectLight;
-// 		}
-		
-// 		// material especular 
-
-// 		else if (obj.mat == specular){
-// 			newDir = DirectionBSDF::SpecularBSDF(r, n);  // direccion de refleccion especular ideal
-// 			checkLightPath = true;
-// 			// wr.normalize();
-// 			// return baseColor.mult(shade(Ray(x, wr), bounce, 1));
-// 		}
-
-// 		// material dielectrico
-
-// 		else if (obj.mat == dielectric) {
-// 			double n2, ni = 1.0, nt = 1.5;
-// 			Vector wi = r.d * -1;
-
-// 			double cosTi = (wi).dot(n);
-// 			cosTi = Clamp(cosTi, -1, 1);
-// 			bool out2in = cosTi > 0.f;
-// 			if(!out2in){
-// 				swap(ni, nt);
-// 				cosTi = fabs(cosTi);
-// 			}
-// 			n2 = ni/nt;
-
-// 			double cosTt = snell(cosTi, n2);
-
-// 			double F = dielectricFresnel(ni, nt, n2, cosTi, cosTt);
-
-// 			bool reflect = dis(gen) < F;
-
-// 			Vector newDir = DirectionBSDF::DielectricBSDF(r, wi, nv, n2, cosTi, cosTt, reflect);
-
-// 			checkLightPath = true;
-
-// 			// double prob = probDielectric(F, reflect);
-
-// 			// Ray newRay = Ray(x, wo);
-
-// 			// if (reflect){
-// 			// 	double f = F / fabs(cosTi);
-// 			// 	return obj.e + baseColor.mult(shade(newRay, bounce, 1)) * (f*fabs(nv.dot(wo))/prob);
-// 			// }
-// 			// else {
-// 			// 	double f = (((nt*nt)/(ni*ni))*(1 - F)) / fabs(cosTt);
-// 			// 	return obj.e + baseColor.mult(shade(newRay, bounce, 1))*(f*fabs(nv.dot(wo))/prob);
-// 			}
-// 		else{
-// 			newDir = Vector();
-// 			checkLightPath = true;
-// 		}
-
-// 		r = Ray(x, newDir);
-// 	}
-	
-// }
-
+// Determine color value for a given ray
 Color shade(
 	const Ray &ray,
 	const std::vector<LightPath> &lightPath,
 	int bounce,
-	int isFirstBounce,
+	int considerLightEmission,
 	Vector gatheredColor,
-	bool checkLightPath,
-	Vector gatheredRefl
+	Vector gatheredRefl,
+	const int maxBounces
 ) {
 	Ray r = ray;
 	double t;
 	int id = 0;
 
-	// determinar que esfera (id) y a que distancia (t) el rayo intersecta
+	if (bounce++ > maxBounces) return Color();
+
+	// Determine which sphere (id) and at what distance (t) the ray (r) intersects
 	if (!intersect(r, t, id))
-		return Color();	// el rayo no intersecto objeto, return Vector() == negro
-  
+		return Color();
+	
+	// Hit object
 	const Sphere &obj = spheres[id];  //esfera sobre la que se intersecto
 
-	if (++bounce > 10) return Color();
-
-	// determinar coordenadas del punto de interseccion
+	// Hit point
 	Point x = r.o + r.d*t;
 
-	// determinar la dirección normal en el punto de interseccion
+	// Normal at hit point
 	Vector n = (x - obj.p).normalize();
 
-	// determinar si un rayo choca con un objeto por dentro
-	// si es el caso,  voltear  la normal (nv)
+	// If object was hit from inside, flip normal
 	Vector nv;
 	if (n.dot(r.d * -1) >= 0) {nv = n;}
 	else {nv = n * -1;}
 
-	// color del objeto intersectado
 	Color baseColor = obj.c;
 	
-	// ruleta rusa
+	// Russian roulette
 	double q = 0.1;
 	double continueprob = 1.0 - q;
 	if (dis(gen) < q) return Color();
 
-	if(checkLightPath || obj.mat != diffuse) {
-		gatheredColor = gatheredColor + gatheredRefl.mult(obj.e);
-	}
 
-	// determinar el color que se regresara
-	
-	// material difuso
+	if (obj.mat == diffuse) {
 
-	if (obj.mat == 0) {
-
-		// obtener una direccion aleatoria con muestreo de coseno hemisferico, wi
+		// Obtain new direction (newdir) using cosine hemisphere sampling
 		Vector newDir = DirectionBSDF::DiffuseBSDF(n);
 		Color bsdf = BRDF(baseColor);
 		double dotCos = nv.dot(newDir);
 		double probMat = probCosineHemisphere(newDir, nv);
 		Ray newRay = Ray(x, newDir);
 
-		bool notLight = lights.find(id) == lights.end();
-
-		if(!notLight && isFirstBounce){
-			gatheredColor = gatheredColor + gatheredRefl.mult(obj.e);
-		}
-		// else if(notLight || checkLightPath){
-		// 	gatheredColor = gatheredColor + gatheredRefl.mult(directLightValue(x, n, bsdf, continueprob));
-		// }
-
+		// Compute geometric term contribution
 		Vector G = Gterm(lightPath, obj, x, n, id);
 		gatheredColor = gatheredColor + gatheredRefl.mult(G);
 
-		// calculo de iluminacion indirecta
+		// Compute indirect illumination
+		Color indirectLight = bsdf.mult(shade(newRay, lightPath, bounce++, 0, gatheredColor, gatheredRefl.mult(baseColor), maxBounces)) * (fabs(dotCos)/(probMat*continueprob));
+		
+		// Compute direct illumination
+		Color directLight = directLightValue(x, nv, bsdf, continueprob);
 
-		Color indirectLight = bsdf.mult(shade(newRay, lightPath, bounce + 1, 0, gatheredColor, false, gatheredRefl.mult(baseColor))) * (fabs(dotCos)/(probMat*continueprob));
-
-		// para cada esfera en la escena, checar cuales son fuentes de luz
-
-		Color directLight;
-		for (int i = 0; i < totalShperes; i++){
-			
-			const Sphere &temp = spheres[i];
-			if (temp.e.x <= 0 && temp.e.y <= 0 && temp.e.z <= 0)	// si la esfera i no tiene emision, saltarla
-				continue;
-
-			// si la esfera i es una fuente de luz, realizar muestreo de angulo solido, wl
-			
-			double theta1, phi1, cosTmax, probLight;
-			paramSolidAngle(x, theta1, phi1, cosTmax, temp);
-			Vector wc = (temp.p - x).normalize();
-			Vector wl = sampleDir(wc, theta1, phi1).normalize();
-			if (intersect(Ray(x, wl), t, id) && id == i){	// si no hay oclusion, calcular iluminacion directa
-				Color Le = temp.e;
-				double dotCos1 = nv.dot(wl);
-				probLight = probSolidAngle(cosTmax);
-				directLight = directLight + Le.mult(bsdf * fabs(dotCos1) * (1.0 / (probLight*continueprob)));
-			}
-		}
-		return obj.e * isFirstBounce + directLight + indirectLight;
+		// Only multiply by object emission if throwing first camera ray for a given sample (to display light emitter)
+		return obj.e * considerLightEmission + directLight + indirectLight;
 	}
 	
 	// material especular 
 
-	if (obj.mat == 1){
+	if (obj.mat == specular){
 		Vector newDir = DirectionBSDF::SpecularBSDF(r, nv);
-		return baseColor.mult(shade(Ray(x, newDir), lightPath, bounce + 1, 1, gatheredColor, false, gatheredRefl.mult(baseColor)));
+		return obj.e * considerLightEmission + baseColor.mult(shade(Ray(x, newDir), lightPath, bounce++, 1, gatheredColor, gatheredRefl.mult(baseColor), maxBounces));
 	}
 
 	// material dielectrico
 
-	if (obj.mat == 2) {
-		double n2, ni = 1.0, nt = 1.5, F, rpar, rper;
+	if (obj.mat == dielectric) {
+		double eta, eta1 = 1.0, eta2 = 1.5;
 		Vector wi = r.d * -1;
 
-		// ley de snell para calcular cosTt
+		// Snell's law to compute cosTt
 		double cosTi = (wi).dot(n);
 		cosTi = Clamp(cosTi, -1, 1);
 		bool out2in = cosTi > 0.f;
 		if(!out2in){
-			swap(ni, nt);
+			swap(eta1, eta2);
 			cosTi = fabs(cosTi);
 		}
-		n2 = ni/nt;
+		eta = eta1/eta2;
 
-		double sinTi = sqrt(max(0.0, 1.0 - cosTi * cosTi));
-		double sinTt = n2 * sinTi;
-		double cosTt = sqrt(max(0.0, 1 - sinTt * sinTt));
+		double cosTt = snell(cosTi, eta);
 
-		// calculo de Fresnel
-		if (sinTt >= 1){
-			F = 0;
-		}
-		else{
-			rpar = ((nt*cosTi) - (ni*cosTt))/((nt*cosTi) + (ni*cosTt));
-			rper = ((ni*cosTi) - (nt*cosTt))/((ni*cosTi) + (nt*cosTt));
-			F = (rpar*rpar + rper*rper) * 0.5;
-		}
-
-		Vector wr = r.d - nv*2*((nv.dot(r.d)));  // direccion de refleccion especular ideal
-		wr.normalize();
-		double cosTr = wr.dot(nv);
-		Vector wt;  							// direccion de transmision
-
-		wt = ((wi*-1) * n2) + nv*(n2 * cosTi - cosTt);
-		wt.normalize();
-
-		Ray refractionRay = Ray(x, wt);
-		Ray reflectionRay = Ray(x, wr);
+		// Fresnel computation
+		double F = dielectricFresnel(eta1, eta2, eta, cosTi, cosTt);
 
 		bool reflect = dis(gen) < F;
-		double pr = F;
-		double pt = 1.0 - F;
+
+		Vector newDir = DirectionBSDF::DielectricBSDF(r, wi, nv, eta, cosTi, cosTt, reflect);
+
+		double prob = probDielectric(F, reflect);
 
 		double fr = F / fabs(cosTi);
-		double ft = (((nt*nt)/(ni*ni))*(1 - F)) / fabs(cosTt);
+		double ft = (((eta2*eta2)/(eta1*eta1))*(1 - F)) / fabs(cosTt);
 
 		if (reflect) {
-			return obj.e + baseColor.mult(shade(reflectionRay, lightPath, bounce + 1, 1, gatheredColor, false, gatheredRefl.mult(baseColor))) * (fr*fabs(nv.dot(wr))/pr);
+			return obj.e * considerLightEmission + baseColor.mult(shade(Ray(x, newDir), lightPath, bounce++, 1, gatheredColor, gatheredRefl.mult(baseColor), maxBounces)) * (fr*fabs(nv.dot(newDir))/prob);
 		}
 
-		return obj.e + baseColor.mult(shade(refractionRay, lightPath, bounce + 1, 1, gatheredColor, false, gatheredRefl.mult(baseColor)))*(ft*fabs(nv.dot(wt))/pt);
-
-		// return baseColor.mult(shade(refractionRay, bounce, 1)*(ft/pt) + shade(Ray(x, wr), bounce, 1)*(fr/pr));
+		return obj.e * considerLightEmission + baseColor.mult(shade(Ray(x, newDir), lightPath, bounce++, 1, gatheredColor, gatheredRefl.mult(baseColor), maxBounces))*(ft*fabs(nv.dot(newDir))/prob);
 	}
-		
 
 	else return Color();
 }
@@ -573,7 +377,7 @@ Color shade(
 int main(int argc, char *argv[]) {
 
 	getLights();
-	std::cout << "Total lights: " << totalLights << std::endl;
+	int CameraBounces = 5, LightBounces = 5;
 	
 	int w = 1024, h = 768; // image resolution
 
@@ -602,23 +406,14 @@ int main(int argc, char *argv[]) {
 		for(int x = 0; x < w; x++ ) {
 			for (int n=0; n<N; n++){
 
-				std::vector<LightPath> lightPath = makeLightPath(5);
-				// if (x == 0 && y == 0 && n < 10) {
-				// 	std::cout << "Light Paths for the First Pixel:" << std::endl;
-				// 	std::cout << "Light Path size: " << lightPath.size() << std::endl;
-				// 	std::cout << "Iteration " << n << ": " << std::endl;
-				// 	std::cout << "Position (x): " << lightPath[4].x << std::endl;
-				// 	std::cout << "Color: " << lightPath[4].color << std::endl;
-				// 	std::cout << "Associated Light: " << lightPath[4].light << std::endl;
-				// 	std::cout << "Associated Object: " << lightPath[4].obj << std::endl;
-            	// }
+				std::vector<LightPath> lightPath = makeLightPath(LightBounces);
 				int idx = (h - y - 1) * w + x; // index en 1D para una imagen 2D x,y son invertidos
 				Color pixelValue = Color(); // pixelValue en negro por ahora
 				// para el pixel actual, computar la dirección que un rayo debe tener
 				Vector cameraRayDir = cx * ( double(x)/w - .5) + cy * ( double(y)/h - .5) + camera.d;
 
 				// computar el color del pixel para el punto que intersectó el rayo desde la camara
-				pixelValue = pixelValue + shade( Ray(camera.o, cameraRayDir.normalize()), lightPath, 0, 1, Vector(0,0,0), true, Vector(1,1,1)) * (1.0/N);
+				pixelValue = pixelValue + shade( Ray(camera.o, cameraRayDir.normalize()), lightPath, 0, 1, Vector(0,0,0), Vector(1,1,1), CameraBounces) * (1.0/N);
 
 				// limitar los tres valores de color del pixel a [0,1]
 				pixelColors[idx] = pixelColors[idx] + Color(clamp(pixelValue.x), clamp(pixelValue.y), clamp(pixelValue.z));

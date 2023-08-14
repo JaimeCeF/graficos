@@ -12,7 +12,7 @@ std::random_device rd;  // Will be used to obtain a seed for the random number e
 std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
 std::uniform_real_distribution<> dis(0.0, 1.0);
 
-// limita el valor de x a [0,1]
+// Limits range of x to [0,1]
 inline double clamp(const double x) { 
 	if(x < 0.0)
 		return 0.0;
@@ -21,13 +21,14 @@ inline double clamp(const double x) {
 	return x;
 }
 
+// Limits range of x to [low,high]
 inline double Clamp(double val, int low, int high) {
     if (val < low) return low;
     else if (val > high) return high;
     else return val;
 }
 
-// convierte un valor de color en [0,1] a un entero en [0,255]
+// Converts color value from [0,1] to int in [0,255]
 inline int toDisplayValue(const double x) {
 	return int( pow( clamp(x), 1.0/2.2 ) * 255 + .5); 
 }
@@ -43,7 +44,7 @@ void coordinateSystem(Vector &n, Vector &s, Vector &t){
 	t = (s % n);
 }
 
-// funcion para obtener una direccion global a partir de una local
+// Get global direction vector from local direction vector using coordinateSystem()
 Vector globalizeCoord(Vector &locVec, Vector &n, Vector &s, Vector &t){
 	Vector globalCoord;
 	Vector row1 = Vector (s.x, t.x, n.x);
@@ -54,7 +55,7 @@ Vector globalizeCoord(Vector &locVec, Vector &n, Vector &s, Vector &t){
 	return globalCoord;
 }
 
-// funcion para hacer un vector a partir de theta y phi
+// Make vector from theta and phi
 Vector makeVec(double &theta, double &phi){
 	double x = sin(theta) * cos(phi);
     double y = sin(theta) * sin(phi);
@@ -64,7 +65,7 @@ Vector makeVec(double &theta, double &phi){
 	return vec;
 }
 
-// funcion para obtener los parametros de muestreo de coseno hemisferico
+// Obtain cosine hemisphere sampling parameters
 void paramCosineHemisphere(double &theta, double &phi) {
     double rand1 = dis(gen);
     double rand2 = dis(gen);
@@ -72,7 +73,7 @@ void paramCosineHemisphere(double &theta, double &phi) {
     phi = 2.0 * M_PI * rand2;
 }
 
-// funcion para obtener los parametros de muestreo de angulo solido
+// Obtain solid angle sampling parameters
 void paramSolidAngle(Point &p, double &theta, double &phi, double &cosTmax, const Sphere &light) {
 	double r = light.r;
     double rand1 = dis(gen);
@@ -85,7 +86,7 @@ void paramSolidAngle(Point &p, double &theta, double &phi, double &cosTmax, cons
     phi = 2.0 * M_PI * rand2;
 }
 
-// funcion para obtener direccion de muestreo en area
+//  Obtain direction by uniformly sampling a sphere
 Vector sphereUniformDir() {
     double rand1 = dis(gen);
     double rand2 = dis(gen);
@@ -96,17 +97,17 @@ Vector sphereUniformDir() {
 	return dir;
 }
 
-// funcion para calcular probabilidad de muestreo de coseno hemisferico (diffuse material pdf)
+// Compute diffuse material pdf from cosine hemisphere sampling
 double probCosineHemisphere(Vector &wi, Vector &n){
 	return (wi.dot(n)) * invPi;
 }
 
-// funcion para calcular probabilidad de muestreo del angulo solido (light pdf)
+// Compute light pdf from solid angle sampling
 double probSolidAngle(double &cosTmax) {
 	return 1.0 / (2 * M_PI * (1 - cosTmax));
 }
 
-// funcion para calcuar pdf de direccion de refraccion o reflexion en dielectricos
+// Compute reflection or refraction pdf
 double probDielectric(double &F, bool &reflect){
 	double pdf;
 	if (reflect){
@@ -118,7 +119,7 @@ double probDielectric(double &F, bool &reflect){
 	return pdf;
 }
 
-// funcion para obtener una diraccion muestreada en superficie difusa
+// Compute direction vector sampled from diffuse surface
 Vector sampleDir(Vector &n, double &theta, double &phi){
 	Vector s, t;
 	coordinateSystem(n, s, t);
@@ -127,7 +128,7 @@ Vector sampleDir(Vector &n, double &theta, double &phi){
 	return wiglob;
 }
 
-// calculo de Fresnel
+// Compute Fresnel for dielectric surface
 double dielectricFresnel(double &ni, double &nt, double &n2, double &cosTi, double &cosTt){
 	double rpar, rper, F;
 
@@ -144,7 +145,7 @@ double dielectricFresnel(double &ni, double &nt, double &n2, double &cosTi, doub
 	return F;
 }
 
-// ley de snell para calcular cosTt
+// Snell's law to compute cosTt
 double snell(double &cosTi, double &eta){
 	double sinTi = sqrt(max(0.0, 1.0 - cosTi * cosTi));
 	double sinTt = eta * sinTi;

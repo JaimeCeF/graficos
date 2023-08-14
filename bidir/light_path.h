@@ -4,10 +4,10 @@
 #include "vector.h"
 
 struct LightPath {
-	Vector x;
-	Color color;
-	int light;
-	int obj;
+	Vector x; // Light ray hit point
+	Color color; // Hit object color
+	int light; // Light from which light ray was trhown
+	int obj; // Index of object hit by light ray
 
 	LightPath() {}
 

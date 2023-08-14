@@ -15,18 +15,14 @@ public:
 	}
 
     static Vector SpecularBSDF(Ray &r, Vector &n) {
-        Vector wr = (r.d - n * (2 * n.dot(r.d))).normalize();
+        Vector wr = (r.d - n * (2 * n.dot(r.d))).normalize(); // Perfect reflection direction
         return wr;
 	}
 
 	static Vector DielectricBSDF(const Ray &r, const Vector &wi, const Vector &nv, double &n2, double &cosTi, double &cosTt, bool &reflect) {
 
-		Vector wr = r.d - nv*2*((nv.dot(r.d)));  // direccion de refleccion especular ideal
-		wr.normalize();
-		Vector wt;  							// direccion de transmision
-
-		wt = ((wi*-1) * n2) + nv*(n2 * cosTi - cosTt);
-		wt.normalize();
+		Vector wr = (r.d - nv*2*((nv.dot(r.d)))).normalize();  // Perfect reflection direction
+		Vector wt = (((wi*-1) * n2) + nv*(n2 * cosTi - cosTt)).normalize(); // Perfect transmission direction
 
 		if (reflect){
 			return wr;

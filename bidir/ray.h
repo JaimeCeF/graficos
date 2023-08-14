@@ -6,9 +6,9 @@
 class Ray 
 { 
 public:
-	Point o; // origen del rayo
-	Vector d; // direcccion del rayo
-	Ray(Point o_, Vector d_) : o(o_), d(d_) {} // constructor
+	Point o; // Ray origin
+	Vector d; // Ray direction
+	Ray(Point o_, Vector d_) : o(o_), d(d_) {} // Constructor
 };
 
 
