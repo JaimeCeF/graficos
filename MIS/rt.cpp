@@ -326,9 +326,6 @@ Vector monteCosHem(Vector &n, Point &x, const Sphere &obj){
 		double cosTmax = getCosTmax(bounceRay, x);
 		gPdf = (probSolidAngle(cosTmax));
 		double wf = PowerHeuristic(fPdf, gPdf);
-		// printf("BRDF fPdf is %f \n", fPdf);
-		// printf("BRDF gPdf is %f \n", gPdf);
-		// printf("BRDF wf is %f \n", wf);
 		return (Le.mult(fr) * (dotCos/fPdf))*wf;
 	}
 	else return Color();
@@ -354,11 +351,8 @@ Vector monteCarloSolidAngle(Vector &n, Point &x, const Sphere &obj){
 		Color fr = BRDF(obj);
 		double dotCos = n.dot(wiglob);
 		fPdf = probSolidAngle(cosTmax);
-		gPdf = (probCosineHemisphere(wi));
+		gPdf = probCosineHemisphere(wi);
 		double wg = PowerHeuristic(fPdf, gPdf);
-		// printf("Light fPdf is %f \n", fPdf);
-		// printf("Light gPdf is %f \n", gPdf);
-		// printf("Light wg is %f \n", wg);
 		L = L + (Le.mult(fr) * (dotCos/fPdf))*wg;
 	}
 
