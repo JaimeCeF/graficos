@@ -108,18 +108,6 @@ public:
 
 // Sphere spheres[] = {
 // 	//Escena: radio, posicion, color, emision, material
-// 	// Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         diffuse), // pared izq
-// 	// Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),	      diffuse), // pared der
-// 	// Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      diffuse), // pared detras
-// 	// Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      diffuse), // suelo
-// 	// Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      diffuse), // techo
-// 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(.75, .75, .25),	     Color(),	      0), // esfera espejo
-// 	// Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1),       Color(), 		  dielectric), // esfera dielectrica
-// 	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), 0)  // esfera de luz
-// };
-
-// Sphere spheres[] = {
-// 	//Escena: radio, posicion, color, emision, material
 // 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         0), // pared izq
 // 	Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),	      0), // pared der
 // 	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      0), // pared detras
@@ -137,7 +125,7 @@ Sphere spheres[] = {
 	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      0), // pared detras
 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      0), // suelo
 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      0), // techo
-	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      1), // esfera espejo
+	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      2), // esfera espejo
 	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1),       Color(), 		  2), // esfera dielectrica
 	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), 0)  // esfera de luz
 };
