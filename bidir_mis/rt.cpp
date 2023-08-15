@@ -18,18 +18,6 @@
 
 using namespace std;
 
-// Sphere spheres[] = {
-// 	//Escena: radio, posicion, color, emision, material
-// 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         diffuse), // pared izq
-// 	Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),	      diffuse), // pared der
-// 	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      diffuse), // pared detras
-// 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      diffuse), // suelo
-// 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      diffuse), // techo
-// 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      specular), // esfera espejo
-// 	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1), 	     Color(),	      dielectric), // esfera dielectrica
-// 	Sphere(1.5, Point(-40, -39.3, -60),        Color(0, 0, 0),       Color(600,600,600), diffuse)  // esfera de luz
-// };
-
 Sphere spheres[] = {
 	//Escena: radio, posicion, color, emision, material
 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         diffuse), // pared izq
@@ -38,9 +26,23 @@ Sphere spheres[] = {
 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      diffuse), // suelo
 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      diffuse), // techo
 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      specular), // esfera espejo
-	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1),       Color(), 		  dielectric), // esfera dielectrica
-	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), diffuse)  // esfera de luz
+	Sphere(10.5, Point(-40, -30.3, -34.6), Color(1, 1, 1),	     Color(),	      diffuse), // esfera difusa
+	Sphere(10.5, Point(-23, -30.3, -60), Color(1, 1, 1),	     Color(),	      diffuse), // esfera difusa
+	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1), 	     Color(),	      dielectric), // esfera dielectrica
+	Sphere(1.5, Point(-40, -39.3, -60),        Color(0, 0, 0),       Color(600,600,600), diffuse)  // esfera de luz
 };
+
+// Sphere spheres[] = {
+// 	//Escena: radio, posicion, color, emision, material
+// 	Sphere(1e5,  Point(-1e5 - 49, 0, 0),   Color(.75, .25, .25), Color(),         diffuse), // pared izq
+// 	Sphere(1e5,  Point(1e5 + 49, 0, 0),    Color(.25, .25, .75), Color(),	      diffuse), // pared der
+// 	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      diffuse), // pared detras
+// 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      diffuse), // suelo
+// 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      diffuse), // techo
+// 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      specular), // esfera espejo
+// 	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1),       Color(), 		  dielectric), // esfera dielectrica
+// 	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), diffuse)  // esfera de luz
+// };
 
 double totalShperes = sizeof(spheres)/sizeof(Sphere);
 
@@ -242,10 +244,10 @@ double Gterm(const std::vector<LightPath> &lightPath, const Sphere &obj, const P
 				Vector lightPathNorm = (lightPath[i].x - spheres[lightPath[i].obj].p).normalize();
 
 				// Dot product between normal at camera object hit point and direction to light path hit point
-				double cameraObjDot = fabs(dirNorm.dot(n));
+				double cameraObjDot = fabs(dirNorm.dot(n))*invPi;
 
 				// Dot product between normal at light path hit point and direction to camera object hit point
-				double lightObjDot = fabs((dirNorm * -1.).dot(lightPathNorm));
+				double lightObjDot = fabs((dirNorm * -1.).dot(lightPathNorm))*invPi;
 
 				// Squared distance between x and lightPath[i].x
 				double sqrdDist = x.squaredDistance(lightPath[i].x);
@@ -356,7 +358,7 @@ Color shade(
 			double cosTmax = getCosTmax(newRay, x);
 			double probLight = (probSolidAngle(cosTmax));
 			double wf = PowerHeuristic(probMat, probLight);
-			indirectLight = bsdf.mult(shade(newRay, lightPath, bounce + 1, 0, gatheredColor, gatheredRefl.mult(baseColor))) *G*wf;
+			indirectLight = bsdf.mult(shade(newRay, lightPath, bounce + 1, 0, gatheredColor, gatheredRefl.mult(baseColor))) *(G/(probMat*continueprob))*wf;
 		}
 		else indirectLight = Color();
 
@@ -421,7 +423,7 @@ int main(int argc, char *argv[]) {
 	
 	int w = 1024, h = 768; // image resolution
 
-	int N = 32;  // numero de muestras
+	int N = 512;  // numero de muestras
 
 	// fija la posicion de la camara y la dirección en que mira
 	Ray camera( Point(0, 11.2, 214), Vector(0, -0.042612, -1).normalize() );
