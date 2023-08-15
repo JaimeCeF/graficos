@@ -114,6 +114,8 @@ public:
 // 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      0), // suelo
 // 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      0), // techo
 // 	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      1), // esfera espejo
+// 	Sphere(10.5, Point(-40, -30.3, -34.6), Color(1, 1, 1),	     Color(),	      0), // esfera difusa
+// 	Sphere(10.5, Point(-23, -30.3, -60), Color(1, 1, 1),	     Color(),	      0), // esfera difusa
 // 	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1), 	     Color(),	      2), // esfera dielectrica
 // 	Sphere(1.5, Point(-40, -39.3, -60),        Color(0, 0, 0),       Color(600,600,600), 0)  // esfera de luz
 // };
@@ -125,7 +127,7 @@ Sphere spheres[] = {
 	Sphere(1e5,  Point(0, 0, -1e5 - 81.6), Color(.25, .75, .25), Color(),	      0), // pared detras
 	Sphere(1e5,  Point(0, -1e5 - 40.8, 0), Color(.25, .75, .75), Color(),	      0), // suelo
 	Sphere(1e5,  Point(0, 1e5 + 40.8, 0),  Color(.75, .75, .25), Color(),	      0), // techo
-	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      2), // esfera espejo
+	Sphere(16.5, Point(-23, -24.3, -34.6), Color(1, 1, 1),	     Color(),	      1), // esfera espejo
 	Sphere(16.5, Point(23, -24.3, -3.6),   Color(1, 1, 1),       Color(), 		  2), // esfera dielectrica
 	Sphere(10.5, Point(0, 24.3, 0),        Color(0, 0, 0),       Color(10,10,10), 0)  // esfera de luz
 };
